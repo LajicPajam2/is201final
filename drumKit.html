@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2048 Game</title>
+    <style>
+        /* Reset and Basic Styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #faf8ef;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #776e65;
+            margin-bottom: 10px;
+            font-size: 3em;
+            text-shadow: 2px 2px #f9f6f2;
+        }
+
+        /* Score Container */
+        .score-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 500px;
+            margin-bottom: 20px;
+        }
+        
+        .icantthinkofaname {
+            color: blue;
+            font-size: 1em;
+            font-weight: bold;
+        }
+
+        .score, .best {
+            background-color: #bbada0;
+            color: #f9f6f2;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 1.2em;
+            box-shadow: inset -2px -2px 5px #a89f91, inset 2px 2px 5px #fffafa;
+        }
+
+        .reset-button {
+            background-color: #8f7a66;
+            color: #f9f6f2;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .reset-button:hover {
+            background-color: #94775d;
+        }
+
+        /* Game Grid */
+        .game-container {
+            position: relative;
+            width: 500px;
+            height: 500px;
+            background-color: #bbada0;
+            border-radius: 6px;
+            padding: 15px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        /* Empty Cells */
+        .cell {
+            background-color: #cdc1b4;
+            border-radius: 3px;
+            position: relative;
+        }
+
+        /* Tiles */
+        .tile {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+            font-weight: bold;
+            transition: transform 0.2s, background-color 0.2s;
+            z-index: 1;
+            word-wrap: break-word;
+        }
+        
+        .tile-default {
+            background-color: #a8a77a;
+            color: #f9f6f2;
+            font-size: 1em;
+        }
+
+        /* Tile Colors */
+        /* Since we're using words, tileColors will be updated accordingly */
+        .tile-2 { background-color: #eee4da; color: #776e65; }
+        .tile-4 { background-color: #ede0c8; color: #776e65; }
+        .tile-8 { background-color: #f2b179; color: #f9f6f2; }
+        .tile-16 { background-color: #f59563; color: #f9f6f2; }
+        .tile-32 { background-color: #f67c5f; color: #f9f6f2; }
+        .tile-64 { background-color: #f65e3b; color: #f9f6f2; }
+        .tile-128 { background-color: #edcf72; color: #f9f6f2; font-size: 1.5em; }
+        .tile-256 { background-color: #edcc61; color: #f9f6f2; font-size: 1.5em; }
+        .tile-512 { background-color: #edc850; color: #f9f6f2; font-size: 1.5em; }
+        .tile-1024 { background-color: #edc53f; color: #f9f6f2; font-size: 1.2em; }
+        .tile-2048 { background-color: #edc22e; color: #f9f6f2; font-size: 1.2em; }
+
+        /* Animation for New Tiles */
+        .tile-new {
+            animation: tile-new 0.2s ease-in-out;
+        }
+
+        @keyframes tile-new {
+            from { transform: scale(0); }
+            to { transform: scale(1); }
+        }
+
+        /* Game Over Overlay */
+        .game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(238, 228, 218, 0.73);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            z-index: 2;
+        }
+
+        .game-over h2 {
+            font-size: 3em;
+            color: #776e65;
+            margin-bottom: 20px;
+        }
+
+        .game-over button {
+            background-color: #8f7a66;
+            color: #f9f6f2;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .game-over button:hover {
+            background-color: #94775d;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 600px) {
+            .game-container {
+                width: 300px;
+                height: 300px;
+                padding: 10px;
+                gap: 10px;
+            }
+
+            .tile {
+                font-size: 1.2em;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            .score-container {
+                max-width: 300px;
+            }
+
+            .reset-button {
+                padding: 8px 16px;
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <h1>2048 Game</h1>
+    
+    <!-- Score Container -->
+    <div class="score-container">
+        <div class="score">Score: <span id="score">0</span></div>
+        <div class="best">Best: <span id="best-score">0</span></div>
+        <button class="reset-button" onclick="resetGame()">Reset</button>
+    </div>
+
+    <!-- Game Container -->
+    <div class="game-container" id="game-container">
+        <!-- Cells will be generated by JavaScript -->
+    </div>
+
+    <!-- Game Over Overlay -->
+    <div class="game-over" id="game-over" style="display: none;">
+        <h2>Game Over!</h2>
+        <button onclick="resetGame()">Try Again</button>
+    </div>
+
+    <!-- Footer (Optional) -->
+    <footer>
+        <p>Created by Jared Achee | <a href="scratch.html">Back to Home</a></p>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        // Initialize Variables
+        const gameContainer = document.getElementById('game-container');
+        const scoreElement = document.getElementById('score');
+        const bestScoreElement = document.getElementById('best-score');
+        const gameOverOverlay = document.getElementById('game-over');
+
+        // Correctly defined words array with quotes and square brackets
+        const words = ["Let", "Me", "Into", "The", "IS", "Program", "Or", "Im", "Going", "to", "Cry"];
+        const wordMap = {};
+        
+        // Populate wordMap to map each word to the next
+        for (let i = 0; i < words.length - 1; i++) {
+            wordMap[words[i]] = words[i + 1];
+        }
+
+        // Initialize grid with empty strings instead of 0
+        let grid = [
+            ["", "", "", ""],
+            ["", "", "", ""],
+            ["", "", "", ""],
+            ["", "", "", ""]
+        ];
+
+        let score = 0;
+        let bestScore = localStorage.getItem('bestScore') || 0;
+
+        bestScoreElement.innerText = bestScore;
+
+        // Directions
+        const DIRECTIONS = {
+            ArrowUp: 'up',
+            ArrowDown: 'down',
+            ArrowLeft: 'left',
+            ArrowRight: 'right'
+        };
+
+        // Tile Colors Mapping
+        // Map words to specific tile classes if desired
+        const tileColors = {
+            "Let": 'tile-2',
+            "Me": 'tile-4',
+            "Into": 'tile-8',
+            "The": 'tile-16',
+            "IS": 'tile-32',
+            "Program": 'tile-64',
+            "Or": 'tile-128',
+            "Im": 'tile-256',
+            "Going": 'tile-512',
+            "to": 'tile-1024',
+            "Cry": 'tile-2048'
+        };
+
+        // Initialize the Game
+        function init() {
+            createGrid();
+            // Manually set the first two tiles to "Let"
+            grid[0][0] = "Let";
+            grid[0][1] = "Let";
+            updateGrid();
+        }
+
+        // Create Grid Cells
+        function createGrid() {
+            gameContainer.innerHTML = '';
+            for (let i = 0; i < 4; i++) {
+                for (let j = 0; j < 4; j++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    gameContainer.appendChild(cell);
+                }
+            }
+        }
+
+        // Add Random Tile (Always "Let")
+        function addRandomTile() {
+            const emptyCells = [];
+            for (let i = 0; i < 4; i++) {
+                for (let j = 0; j < 4; j++) {
+                    if (grid[i][j] === "") {
+                        emptyCells.push({ i, j });
+                    }
+                }
+            }
+
+            if (emptyCells.length === 0) return;
+
+            const randomCell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+            const randomWord = "Let"; // Always add "Let"
+            grid[randomCell.i][randomCell.j] = randomWord;
+        }
+
+        // Update the Grid Display
+        function updateGrid() {
+            const cells = document.querySelectorAll('.cell');
+            cells.forEach((cell, index) => {
+                const i = Math.floor(index / 4);
+                const j = index % 4;
+                const tileValue = grid[i][j];
+                cell.innerHTML = '';
+
+                if (tileValue !== "") {
+                    const tile = document.createElement('div');
+                    tile.classList.add('tile', tileColors[tileValue] || 'tile-default');
+                    tile.innerText = tileValue;
+                    // Only add 'tile-new' class for "Let" tiles
+                    if (tileValue === "Let") {
+                        tile.classList.add('tile-new');
+                    }
+                    cell.appendChild(tile); // Append the tile to the cell
+                }
+            });
+
+            scoreElement.innerText = score;
+            if (score > bestScore) {
+                bestScore = score;
+                bestScoreElement.innerText = bestScore;
+                localStorage.setItem('bestScore', bestScore);
+            }
+        }
+
+        // Handle Key Presses
+        document.addEventListener('keydown', (event) => {
+            const direction = DIRECTIONS[event.key];
+            if (direction) {
+                event.preventDefault();
+                if (move(direction)) {
+                    addRandomTile();
+                    updateGrid();
+                    if (checkGameOver()) {
+                        gameOver();
+                    }
+                }
+            }
+        });
+
+        // Move Tiles in the Specified Direction
+        function move(direction) {
+            let moved = false;
+            let rotatedGrid = rotateGrid(direction);
+
+            for (let i = 0; i < 4; i++) {
+                const originalRow = rotatedGrid[i].slice();
+                const compressedRow = compress(rotatedGrid[i]);
+                const mergedResult = merge(compressedRow);
+                const finalRow = compress(mergedResult.row);
+
+                rotatedGrid[i] = finalRow;
+
+                if (!arraysEqual(originalRow, finalRow)) {
+                    moved = true;
+                }
+            }
+
+            grid = rotateGridBack(rotatedGrid, direction);
+            return moved;
+        }
+
+        // Rotate Grid Based on Direction
+        function rotateGrid(direction) {
+            let rotated = JSON.parse(JSON.stringify(grid));
+            switch (direction) {
+                case 'up':
+                    rotated = rotate(rotated, 3); // 270 degrees clockwise
+                    break;
+                case 'down':
+                    rotated = rotate(rotated, 1); // 90 degrees clockwise
+                    break;
+                case 'left':
+                    // No rotation needed for left
+                    break;
+                case 'right':
+                    rotated = rotate(rotated, 2); // 180 degrees clockwise
+                    break;
+            }
+            return rotated;
+        }
+
+        // Rotate Grid Back to Original Orientation
+        function rotateGridBack(rotated, direction) {
+            switch (direction) {
+                case 'up':
+                    rotated = rotate(rotated, 1); // Rotate back 90 degrees clockwise
+                    break;
+                case 'down':
+                    rotated = rotate(rotated, 3); // Rotate back 270 degrees clockwise
+                    break;
+                case 'left':
+                    // No rotation needed for left
+                    break;
+                case 'right':
+                    rotated = rotate(rotated, 2); // Rotate back 180 degrees clockwise
+                    break;
+            }
+            return rotated;
+        }
+
+        // Rotate Function (Clockwise 90 Degrees)
+        function rotate(matrix, times) {
+            let rotated = JSON.parse(JSON.stringify(matrix));
+            for (let t = 0; t < times; t++) {
+                rotated = rotated[0].map((_, colIndex) => rotated.map(row => row[colIndex]).reverse());
+            }
+            return rotated;
+        }
+
+        // Compress Tiles (Remove Empty Strings and Shift Left)
+        function compress(row) {
+            const newRow = row.filter(word => word !== "");
+            while (newRow.length < 4) {
+                newRow.push("");
+            }
+            return newRow;
+        }
+
+        // Merge Tiles (Combine Same Words)
+        function merge(row) {
+            let tilesMerged = false; // Declare tilesMerged
+            for (let i = 0; i < 3; i++) {
+                if (row[i] !== "" && row[i] === row[i + 1]) {
+                    if (wordMap[row[i]]) { // Check if there's a next word
+                        row[i] = wordMap[row[i]];
+                        score += 10; // Increment score (customize as needed)
+                        row[i + 1] = "";
+                        tilesMerged = true;
+                        if(tilesMerged) {
+                            console.log("Please Let me into the Program");
+                        }
+                    } else {
+                        // If there's no next word, do not merge
+                        // Optionally, handle reaching the last word (e.g., victory condition)
+                        // Here, we'll simply prevent merging
+                    }
+                }
+            }
+            return { row, tilesMerged }; // Return as an object
+        }
+
+        // Check if Two Arrays are Equal
+        function arraysEqual(a, b) {
+            for (let i = 0; i < a.length; i++) {
+                if (a[i] !== b[i]) return false;
+            }
+            return true;
+        }
+
+        // Check for Game Over
+        function checkGameOver() {
+            for (let i = 0; i < 4; i++) {
+                for (let j = 0; j < 4; j++) {
+                    if (grid[i][j] === "") return false; // Check for empty strings
+                    if (j < 3 && grid[i][j] === grid[i][j + 1]) return false;
+                    if (i < 3 && grid[i][j] === grid[i + 1][j]) return false;
+                }
+            }
+            return true;
+        }
+
+        // Handle Game Over
+        function gameOver() {
+            gameOverOverlay.style.display = 'flex';
+        }
+
+        // Reset the Game
+        function resetGame() {
+            grid = [
+                ["", "", "", ""],
+                ["", "", "", ""],
+                ["", "", "", ""],
+                ["", "", "", ""]
+            ];
+            score = 0;
+            gameOverOverlay.style.display = 'none';
+            // Manually set the first two tiles to "Let"
+            grid[0][0] = "Let";
+            grid[0][1] = "Let";
+            updateGrid();
+        }
+
+        // Initialize the Game on Page Load
+        window.onload = init;
+    </script>
+</body>
+</html>
